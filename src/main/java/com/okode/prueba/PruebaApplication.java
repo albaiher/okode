@@ -6,6 +6,16 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.http.*;
 
+import com.okode.prueba.Authentication.JWTFilter;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+
+
 import reactor.core.publisher.Mono;
 
 @SpringBootApplication
@@ -13,7 +23,7 @@ import reactor.core.publisher.Mono;
 public class PruebaApplication {
 
 	private static final String BASE_URL = "https://api.themoviedb.org";
-	private static final String KEY = "8c4c40fa5a83e95ea047d237ee28b1f7";
+	private static final String TMDP_KEY = "8c4c40fa5a83e95ea047d237ee28b1f7";
 
 	private WebClient client = WebClient.builder()
 					.baseUrl(BASE_URL)
@@ -32,7 +42,7 @@ public class PruebaApplication {
 
 	private String searchMovieTMDB(String movie){
 		return client.get()
-				.uri(String.join("","3/search/movie?","api_key=",KEY,"&query=",movie))
+				.uri(String.join("","3/search/movie?","api_key=",TMDP_KEY,"&query=",movie))
 				.retrieve()
 				.onStatus(HttpStatus::is4xxClientError,
 										error -> Mono.error(new RuntimeException("Api not found")))
@@ -40,5 +50,19 @@ public class PruebaApplication {
 										error -> Mono.error(new RuntimeException("Server is not responding")))
 				.bodyToMono(String.class)
 				.block();
+	}
+
+	@EnableWebSecurity
+	@Configuration
+	class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+
+		@Override
+		protected void configure(HttpSecurity http) throws Exception {
+			http.csrf().disable()
+				.addFilterAfter(new JWTFilter(), UsernamePasswordAuthenticationFilter.class)
+				.authorizeRequests()
+				.antMatchers(HttpMethod.POST, "/user").permitAll()
+				.anyRequest().authenticated();
+		}
 	}
 }
