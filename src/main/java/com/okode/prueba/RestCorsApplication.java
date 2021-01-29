@@ -18,6 +18,7 @@ public class RestCorsApplication {
 			@Override
 			public void addCorsMappings(CorsRegistry registry){
 				registry.addMapping("/searchMovie").allowedOrigins("http://localhost:8080");
+				registry.addMapping("/user").allowedOrigins("http://localhost:8080");
 			}
 		};
 	}
